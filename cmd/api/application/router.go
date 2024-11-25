@@ -20,5 +20,5 @@ func RegisterRoutes(app *Application) {
 		c.String(http.StatusOK, "pong")
 	})
 
-	app.Router.POST("/item", app.TestController.CreateItem)
+	app.Router.POST("/products", app.ProductController.ProcessProducts)
 }

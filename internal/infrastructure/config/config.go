@@ -4,17 +4,17 @@ import (
 	"encoding/json"
 	"sync"
 
-	cfg "github.com/antorpo/os-go-concurrency/internal/domain/entities/config"
+	"github.com/antorpo/os-go-concurrency/internal/domain/entities"
 	toolkit "github.com/antorpo/os-go-concurrency/pkg/config"
 )
 
 type configuration struct {
 	mutex  sync.RWMutex
-	config *cfg.Configuration
+	config *entities.Configuration
 }
 
 type IConfiguration interface {
-	GetConfig() *cfg.Configuration
+	GetConfig() *entities.Configuration
 	LoadConfig() error
 	LoadJSONProfile(profileName string, mappingType interface{}) (interface{}, error)
 }
@@ -24,9 +24,9 @@ func NewConfiguration() IConfiguration {
 }
 
 func (c *configuration) LoadConfig() error {
-	var config cfg.Configuration
+	var config entities.Configuration
 
-	if _, err := c.LoadJSONProfile(cfg.AppConfigName, &config.App); err != nil {
+	if _, err := c.LoadJSONProfile(entities.AppConfigName, &config.App); err != nil {
 		return err
 	}
 
@@ -48,9 +48,9 @@ func (c *configuration) LoadJSONProfile(profileName string, mappingType interfac
 	return &mappingType, nil
 }
 
-func (c *configuration) GetConfig() *cfg.Configuration {
+func (c *configuration) GetConfig() *entities.Configuration {
 	if c.config == nil {
-		return &cfg.Configuration{}
+		return &entities.Configuration{}
 	}
 
 	c.mutex.Lock()
@@ -58,7 +58,7 @@ func (c *configuration) GetConfig() *cfg.Configuration {
 	return c.config
 }
 
-func (c *configuration) setConfig(newConfig *cfg.Configuration) {
+func (c *configuration) setConfig(newConfig *entities.Configuration) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.config = newConfig
