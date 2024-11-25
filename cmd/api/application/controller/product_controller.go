@@ -3,6 +3,7 @@ package controller
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/antorpo/os-go-concurrency/internal/application/usecase"
 	"github.com/antorpo/os-go-concurrency/internal/domain/entities"
@@ -17,27 +18,36 @@ type IProductController interface {
 }
 
 type productController struct {
-	logger         log.Logger
-	meter          metric.Meter
-	productUseCase usecase.IProductUseCase
-	productCount   metric.Int64Counter
+	logger                log.Logger
+	meter                 metric.Meter
+	productUseCase        usecase.IProductUseCase
+	productGauge          metric.Int64Gauge
+	responseTimeHistogram metric.Float64Histogram
 }
 
 func NewProductController(logger log.Logger, meter metric.Meter, productUseCase usecase.IProductUseCase) IProductController {
-	productCount, err := meter.Int64Counter("products_processed_count")
+	productGauge, err := meter.Int64Gauge("products_processed_gauge")
 	if err != nil {
-		logger.Error("failed to create metric counter", log.Err(err))
+		logger.Error("failed to create metric gauge", log.Err(err))
+	}
+
+	responseTimeHistogram, err := meter.Float64Histogram("request_response_time", metric.WithUnit("ms"))
+	if err != nil {
+		logger.Error("failed to create histogram", log.Err(err))
 	}
 
 	return &productController{
-		logger:         logger,
-		meter:          meter,
-		productUseCase: productUseCase,
-		productCount:   productCount,
+		logger:                logger,
+		meter:                 meter,
+		productUseCase:        productUseCase,
+		productGauge:          productGauge,
+		responseTimeHistogram: responseTimeHistogram,
 	}
 }
 
 func (c *productController) ProcessProducts(ctx *gin.Context) {
+	startTime := time.Now()
+
 	var request entities.RequestProducts
 	if err := ctx.BindJSON(&request); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -46,12 +56,11 @@ func (c *productController) ProcessProducts(ctx *gin.Context) {
 
 	mode := ctx.DefaultQuery("mode", "sequential")
 
-	// Metric
 	productLen := len(request.Products)
 	attributes := []attribute.KeyValue{
 		attribute.String("processing_mode", mode),
 	}
-	c.productCount.Add(ctx.Request.Context(), int64(productLen), metric.WithAttributes(attributes...))
+	c.productGauge.Record(ctx.Request.Context(), int64(productLen), metric.WithAttributes(attributes...))
 	c.logger.Info(fmt.Sprintf("processing %d products", productLen), log.String("processing_mode", mode))
 
 	var resp *entities.ResponseProducts
@@ -68,5 +77,7 @@ func (c *productController) ProcessProducts(ctx *gin.Context) {
 		return
 	}
 
+	duration := time.Since(startTime).Milliseconds()
+	c.responseTimeHistogram.Record(ctx.Request.Context(), float64(duration), metric.WithAttributes(attributes...))
 	ctx.JSON(http.StatusOK, resp)
 }

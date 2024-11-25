@@ -54,6 +54,13 @@ func (p *productUseCase) ProcessConcurrent(ctx context.Context, products *entiti
 	// Number of workers in worker pool
 	workers := p.config.GetConfig().App.Workers
 
+	workersGauge, err := p.meter.Int64Gauge("concurrent_workers_gauge")
+	if err != nil {
+		p.logger.Error("failed to create metric gauge", log.Err(err))
+	}
+
+	workersGauge.Record(ctx, int64(workers))
+
 	pipeline.EncryptedMode = false
 	productPipeline := &pipeline.Pipeline{
 		Name:   "Product pipeline",
