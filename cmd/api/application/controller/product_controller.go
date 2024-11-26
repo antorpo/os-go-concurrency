@@ -18,11 +18,11 @@ type IProductController interface {
 }
 
 type productController struct {
-	logger                log.Logger
-	meter                 metric.Meter
-	productUseCase        usecase.IProductUseCase
-	productGauge          metric.Int64Gauge
-	responseTimeHistogram metric.Float64Histogram
+	logger            log.Logger
+	meter             metric.Meter
+	productUseCase    usecase.IProductUseCase
+	productGauge      metric.Int64Gauge
+	responseTimeGauge metric.Float64Gauge
 }
 
 func NewProductController(logger log.Logger, meter metric.Meter, productUseCase usecase.IProductUseCase) IProductController {
@@ -31,17 +31,17 @@ func NewProductController(logger log.Logger, meter metric.Meter, productUseCase 
 		logger.Error("failed to create metric gauge", log.Err(err))
 	}
 
-	responseTimeHistogram, err := meter.Float64Histogram("request_response_time", metric.WithUnit("ms"))
+	responseTimeGauge, err := meter.Float64Gauge("request_response_time_gauge")
 	if err != nil {
-		logger.Error("failed to create histogram", log.Err(err))
+		logger.Error("failed to create gauge", log.Err(err))
 	}
 
 	return &productController{
-		logger:                logger,
-		meter:                 meter,
-		productUseCase:        productUseCase,
-		productGauge:          productGauge,
-		responseTimeHistogram: responseTimeHistogram,
+		logger:            logger,
+		meter:             meter,
+		productUseCase:    productUseCase,
+		productGauge:      productGauge,
+		responseTimeGauge: responseTimeGauge,
 	}
 }
 
@@ -78,6 +78,6 @@ func (c *productController) ProcessProducts(ctx *gin.Context) {
 	}
 
 	duration := time.Since(startTime).Milliseconds()
-	c.responseTimeHistogram.Record(ctx.Request.Context(), float64(duration), metric.WithAttributes(attributes...))
+	c.responseTimeGauge.Record(ctx.Request.Context(), float64(duration), metric.WithAttributes(attributes...))
 	ctx.JSON(http.StatusOK, resp)
 }

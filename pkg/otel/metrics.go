@@ -17,6 +17,8 @@ const (
 	_minimumInterval = time.Minute
 )
 
+var _histogramBuckets = []float64{0.005, 0.01, 0.025, 0.05, 0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10, 25, 50, 100}
+
 func startMetricsProvider(ctx context.Context, serviceName string) (*metric.MeterProvider, error) {
 	exp, err := otlpmetricgrpc.New(
 		ctx,
@@ -35,8 +37,20 @@ func startMetricsProvider(ctx context.Context, serviceName string) (*metric.Mete
 	mp := metric.NewMeterProvider(
 		metric.WithResource(resources),
 		metric.WithReader(
-			metric.NewPeriodicReader(exp, metric.WithInterval(_collectPeriod)),
-		),
+			metric.NewPeriodicReader(
+				exp,
+				metric.WithInterval(_collectPeriod))),
+		metric.WithView(metric.NewView(
+			metric.Instrument{
+				Name: "*",
+				Kind: metric.InstrumentKindHistogram,
+			},
+			metric.Stream{
+				Aggregation: metric.AggregationExplicitBucketHistogram{
+					Boundaries: _histogramBuckets,
+				},
+			},
+		)),
 	)
 	otel.SetMeterProvider(mp)
 
