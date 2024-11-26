@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	_defaultAgentHost = "localhost"
+	_defaultAgentHost = "otel_collector"
 	_defaultAgentPort = "4317"
 )
 

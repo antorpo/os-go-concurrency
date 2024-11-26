@@ -1,6 +1,19 @@
 version: '3.3'
 services:
 
+  myapp:
+    build:
+      context: .
+    ports:
+      - "8080:8080"
+    networks:
+      - my_net
+    depends_on:
+      - otel_collector
+    environment:
+      - CONFIG_DIR=/app/config
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel_collector:4317
+
   # OpenTelemetry Collector
   otel_collector:
     image: otel/opentelemetry-collector-contrib:0.70.0
