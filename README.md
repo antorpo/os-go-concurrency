@@ -61,6 +61,23 @@ Con estos vamos a poder establecer la cantidad "hilos" que vamos a tener a dispo
 
 4. La aplicación y todos los servicios estarán activos y en ejecución.
 
+## Configuración de Grafana
+
+Para facilitar el monitoreo y visualización de las métricas recopiladas durante el procesamiento concurrente, se ha proporcionado una estructura de tablero Grafana preconfigurada.
+
+- **Modelo de JSON para Tablero**: La estructura del tablero de Grafana se encuentra en el archivo `./grafana_dashboard.json`. Esta configuración está lista para ser importada directamente en Grafana, permitiéndote empezar a visualizar las métricas de inmediato.
+
+- **Data Source**:
+    - El único data source requerido para este tablero es Prometheus.
+    - Asegúrate de agregar Prometheus como data source en Grafana con la siguiente URL: [http://prometheus:9090](http://prometheus:9090).
+
+Sigue estos pasos para configurar tu tablero:
+
+1. Inicia sesión en Grafana a través de la interfaz web en [http://localhost:3000](http://localhost:3000).
+2. Navega a la sección de 'Dashboards' y selecciona 'Import'.
+3. Carga el archivo `grafana_dashboard.json` desde el directorio raíz de tu proyecto.
+4. Configura el data source apropiado como Prometheus en la URL mencionada.
+
 ## Endpoints de la Aplicación
 
 A continuación, se presentan ejemplos de cómo interactuar con la API usando cURL.
